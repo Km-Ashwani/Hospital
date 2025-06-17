@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Hospital.BL.Interface.Application.Doctor;
+using Hospital.BL.Interface.Application.Email;
 using Hospital.Db.AppLicationDbContext;
 using Hospital.Db.Models;
 using Hospital.Db.Models.Appointment;
@@ -26,13 +27,15 @@ namespace Hospital.BL.Service.Application.Doctor
         private readonly IMapper _mapper;
         private readonly UserManager<AppUsers> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IEmailService _emailService;
 
-        public DoctorService(AppDbContext context, IMapper mapper, UserManager<AppUsers> userManager, IHttpContextAccessor httpContextAccessor)
+        public DoctorService(AppDbContext context, IMapper mapper, UserManager<AppUsers> userManager, IHttpContextAccessor httpContextAccessor, IEmailService emailService)
         {
             _context = context;
             _mapper = mapper;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
+            _emailService = emailService;
         }
         public async Task<AddDoctorDetailsDto> AddDoctorDetailsAsync(AddDoctorDetailsDto doctorDetails)
         {
@@ -189,12 +192,65 @@ namespace Hospital.BL.Service.Application.Doctor
                 {
                     throw new Exception("Wait for Admin response");
                 }
+                if (appointment.DoctorId != bookAppoinmentUpdateDto.DoctorId)
+                {
+                    throw new Exception("You haven't book appointment for this doctor");
+                }
+                var patient = await _context.PatientDetails
+                   .Include(p => p.AppUser)
+                   .FirstOrDefaultAsync(p => p.UserId == bookAppoinmentUpdateDto.PatientId);
+                if (appointment.AppointmentDate != bookAppoinmentUpdateDto.AppointmentDate)
+                {
+                    throw new Exception("You can't change appointment date, please contact admin for this issue.");
+                }
+
+                var doctor = await _context.DoctorDetails
+                    .Include(d => d.AppUser)
+                    .FirstOrDefaultAsync(d => d.UserId == bookAppoinmentUpdateDto.DoctorId);
+
                 appointment.AppointmentId = appointmentIds;
                 appointment.AppointmentDate = bookAppoinmentUpdateDto.AppointmentDate;
                 appointment.Status = bookAppoinmentUpdateDto.Status;
 
+                string patientEmail = patient?.AppUser?.Email;
+                string subject = "Appointment Update Notification";
+                string body = $@"<p>Dear <strong>{patient.AppUser.firstName} {patient.AppUser.lastName}</strong>,</p>
+                                 <p>We are pleased to inform you that your appointment request has been 
+                                 <strong style='color:green;'>successfully confirmed</strong>.</p>
+
+                                 <p><strong>Appointment Details:</strong></p>
+                                 <ul>
+                                    <li><strong>Doctor ID:</strong> {appointment.DoctorId}</li>
+                                    <li><strong>Doctor Name:</strong> Dr. {doctor.AppUser.firstName} {doctor.AppUser.lastName}</li>
+                                    <li><strong>Appointment Date:</strong> {appointment.AppointmentDate:dd MMM yyyy}</li>
+                                 </ul>
+                                 <p style='margin-top:10px;'>To proceed further, we kindly request you to 
+                                 <strong>complete the payment</strong> at the earliest convenience. Please note that the consultation with your doctor will only be valid after the payment has been successfully processed.</p>
+                                 <p>After your payment is verified, you will receive:</p>
+                                 <ul>
+                                    <li>A payment confirmation email</li>
+                                    <li>Access to full appointment details</li>
+                                    <li>A unique appointment code to present at the hospital/reception</li>
+                                 </ul>
+                                 <p style='margin-top:10px;'>
+                                    If you have any questions or need assistance regarding your appointment or payment process, feel free to contact our support team.
+                                 </p>
+                                 <p><strong>Note:</strong> Please make sure to carry your appointment code and valid ID proof when you visit the hospital.</p><br />
+                                 <p>Thank you for choosing <strong>Hospital Management System</strong>. We are committed to providing you with the best possible care.</p>
+                                 <p>We wish you good health and look forward to serving you!</p>";
+
+
                 _context.Appointments.Update(appointment);
                 await _context.SaveChangesAsync();
+
+                if (!string.IsNullOrEmpty(patientEmail))
+                {
+                    await _emailService.SendEmailAsync(patientEmail, subject, body);
+                }
+                else
+                {
+                    throw new Exception("Patient email not found.");
+                }
                 return _mapper.Map<BookAppoinmentUpdateDto>(appointment);
             }
             catch (Exception ex)

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FuzzySharp;
+using Hospital.BL.Interface.Application.Email;
 using Hospital.BL.Interface.Application.Patient;
 using Hospital.Db.AppLicationDbContext;
 using Hospital.Db.Models;
@@ -13,25 +14,28 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Hospital.BL.Service.Application.Patient
 {
-    public class PatientService: IPatientService
+    public class PatientService : IPatientService
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUsers> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IEmailService _emailService;
 
-        public PatientService(AppDbContext context, IMapper mapper, UserManager<AppUsers> userManager, IHttpContextAccessor httpContextAccessor)
+        public PatientService(AppDbContext context, IMapper mapper, UserManager<AppUsers> userManager, IHttpContextAccessor httpContextAccessor, IEmailService emailService)
         {
             _context = context;
             _mapper = mapper;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
+            _emailService = emailService;
         }
 
         public async Task<AddPatientDetailsDto> AddPatientDetailsAsync(AddPatientDetailsDto patientDetails)
@@ -117,22 +121,68 @@ namespace Hospital.BL.Service.Application.Patient
 
         public async Task<BookAppointmentDto> BookAppointmentAsync(BookAppointmentDto appointmentDetails)
         {
-            if (appointmentDetails == null)
-                throw new ArgumentNullException(nameof(appointmentDetails), "Parameter can't be null.");
+            try
+            {
+                if (appointmentDetails == null)
+                    throw new ArgumentNullException(nameof(appointmentDetails), "Parameter can't be null.");
 
-            var Doctor = await _context.DoctorDetails.Include(x => x.AppUser)
-                .FirstOrDefaultAsync(x => x.UserId == appointmentDetails.DoctorId);
-            if (Doctor == null)
-                throw new Exception("Doctor not found.");
-            var Patient = await _context.PatientDetails.Include(x => x.AppUser)
-                .FirstOrDefaultAsync(x => x.UserId == appointmentDetails.PatientId);
-            if (Patient == null)
-                throw new Exception("Patient not found Please register first.");
-            var appointmentEntity = _mapper.Map<Appointments>(appointmentDetails);
-            await _context.Appointments.AddAsync(appointmentEntity);
-            await _context.SaveChangesAsync();
+                var Doctor = await _context.DoctorDetails.Include(x => x.AppUser)
+                    .FirstOrDefaultAsync(x => x.UserId == appointmentDetails.DoctorId);
+                if (Doctor == null)
+                    throw new Exception("Doctor not found.");
+                var Patient = await _context.PatientDetails.Include(x => x.AppUser)
+                    .FirstOrDefaultAsync(x => x.UserId == appointmentDetails.PatientId);
+                if (Patient == null)
+                    throw new Exception("Patient not found Please register first.");
 
-            return _mapper.Map<BookAppointmentDto>(appointmentEntity);
+                var appointmentExists = await _context.Appointments
+                    .AnyAsync(a => a.DoctorId == Doctor.AppUser.Id && a.PatientId == Patient.AppUser.Id && a.AppointmentDate == appointmentDetails.AppointmentDate);
+
+                if (appointmentExists)
+                {
+                    throw new Exception("Appointment already exists for this doctor and patient on the specified date.");
+                }
+
+                var adminRole = await _context.Roles.FirstOrDefaultAsync(x => x.Name == "Admin");
+                var adminUserId = await _context.UserRoles
+                                .Where(ur => ur.RoleId == adminRole.Id)
+                                .Select(ur => ur.UserId)
+                                .FirstOrDefaultAsync();
+
+                if (adminUserId == null)
+                    throw new Exception("No user found with Admin role.");
+
+                var adminUser = await _context.Users
+                    .Where(u => u.Id == adminUserId)
+                    .FirstOrDefaultAsync();
+
+                if (adminUser == null || string.IsNullOrEmpty(adminUser.Email))
+                {
+                    throw new Exception("Admin email not found.");
+                }
+                string adminEmail = adminUser.Email;
+                string subject = "New Appointment Notification";
+                string body = $"Dear {adminUser.firstName}-{adminUser.lastName},<br/><br/>" +
+                              $"A new appointment has been booked.<br/>" +
+                              $"<Strong>Doctor Id- {Doctor.AppUser.Id}<Strong/> Name :{Doctor.AppUser.firstName} {Doctor.AppUser.lastName}<br/>" +
+                              $"<Strong>Patient Id- {Patient.AppUser.Id}<Strong/> Name :{Patient.AppUser.firstName} {Patient.AppUser.lastName}<br/>" +
+                              $"<strong>Reason:</strong> {appointmentDetails.Reason}<br/><br/>" +
+                              $"<strong>Date:</strong> {appointmentDetails.AppointmentDate}<br/><br/>" +
+                              $"Regards,<br/>Hospital Management System";
+
+                
+                var appointmentEntity = _mapper.Map<Appointments>(appointmentDetails);
+                await _context.Appointments.AddAsync(appointmentEntity);
+                await _context.SaveChangesAsync();
+
+                await _emailService.SendEmailAsync(adminEmail, subject, body);
+
+                return _mapper.Map<BookAppointmentDto>(appointmentEntity);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Something Wrong", ex);
+            }
 
         }
         public async Task<GetAppointmentDetailsDto> GetAppointmentsByUserAsync(string appointmentId)
@@ -254,7 +304,7 @@ namespace Hospital.BL.Service.Application.Patient
 
         public async Task<GetPrescriptionDto> GetPrescriptionAsync(string appointmentId)
         {
-            
+
             try
             {
                 var prescription = await _context.Prescription.Include(m => m.Medicines).FirstOrDefaultAsync(p => p.AppointmentId == Guid.Parse(appointmentId));
@@ -264,7 +314,7 @@ namespace Hospital.BL.Service.Application.Patient
                 }
 
                 var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.AppointmentId == prescription.AppointmentId);
-                if (appointment == null|| appointment.Status.ToString() != "Completed")
+                if (appointment == null || appointment.Status.ToString() != "Completed")
                 {
                     throw new Exception("Appointment not found for the given prescription or appointment  not completed");
                 }

@@ -12,6 +12,8 @@ namespace Hospital.Dto.Application
     {
         [JsonIgnore]
         public Guid AppointmentId { get; set; }
+        public string DoctorId { get; set; }
+        public string PatientId { get; set; }
         public string? AppointmentDate { get; set; }
         public Status? Status { get; set; }
     }

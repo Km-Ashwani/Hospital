@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Hospital.BL.Interface.Application.Admin;
+using Hospital.BL.Interface.Application.Email;
 using Hospital.Db.AppLicationDbContext;
 using Hospital.Dto.Application;
 using Microsoft.EntityFrameworkCore;
@@ -15,11 +16,13 @@ namespace Hospital.BL.Service.Application.Admin
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IEmailService _emailService;
 
-        public AdminService(AppDbContext context,IMapper mapper)
+        public AdminService(AppDbContext context,IMapper mapper,IEmailService emailService)
         {
             _context = context;
             _mapper = mapper;
+            _emailService = emailService;
         }
         public async Task<List<DoctorDetailsDto>> GetAllDoctorDetailsAsync()
         {
@@ -73,13 +76,40 @@ namespace Hospital.BL.Service.Application.Admin
                 appointment.AppointmentDate = bookAppoinmentUpdateDto.AppointmentDate;
                 appointment.Status = bookAppoinmentUpdateDto.Status;
 
+                var doctor = await _context.DoctorDetails
+                    .Include(d => d.AppUser)
+                    .FirstOrDefaultAsync(d => d.AppUser.Id == bookAppoinmentUpdateDto.DoctorId);
+                if (doctor == null)
+                {
+                    throw new Exception("Doctor not found");
+                }
+
+                var patient = await _context.PatientDetails
+                    .Include(p => p.AppUser)
+                    .FirstOrDefaultAsync(p => p.AppUser.Id == bookAppoinmentUpdateDto.PatientId);
+                if (patient == null)
+                    throw new Exception("Patient not found");
+
+                string doctorEmail = doctor.AppUser.Email;
+                string subject = "Appointment Updated";
+                string body = $"Dear {doctor.AppUser.firstName}-{doctor.AppUser.lastName},<br/><br/>" +
+                              $"A new appointment has been booked.<br/>" +
+                              $"<Strong>Doctor Id {doctor.AppUser.Id}<Strong/> Name :{doctor.AppUser.firstName} {doctor.AppUser.lastName}<br/>" +
+                              $"<Strong>Patient Id {patient.AppUser.Id}<Strong/> Name :{patient.AppUser.firstName} {patient.AppUser.lastName}<br/>" +
+                              $"<strong>Status :</strong> {bookAppoinmentUpdateDto.Status}<br/><br/>" +
+                              $"<strong>Date:</strong> {bookAppoinmentUpdateDto.AppointmentDate}<br/><br/>" +
+                              $"Regards,<br/>Hospital Management System";
+
+
+
                 _context.Appointments.Update(appointment);
                 await _context.SaveChangesAsync();
+                await _emailService.SendEmailAsync(doctorEmail, subject, body);
                 return _mapper.Map<BookAppoinmentUpdateDto>(appointment);
             }
             catch (Exception ex)
             {
-                throw new Exception("Something went wrong while saving doctor details.", ex);
+                throw new Exception("Something went wrong .", ex);
             }
         }
     }

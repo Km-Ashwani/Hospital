@@ -130,6 +130,7 @@ namespace Hospital.BL.MappingProfile
                 .ForMember(dest => dest.PatientId, opt => opt.MapFrom(src => src.PatientId))
                 .ForMember(dest => dest.DoctorId, opt => opt.MapFrom(src => src.DoctorId))
                 .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.Reason))
+                .ForMember(dest => dest.AppointmentDate, opt => opt.MapFrom(src => src.AppointmentDate))
                 .ReverseMap();
 
             CreateMap<Appointments, GetAppointmentDetailsDto>().ReverseMap();   

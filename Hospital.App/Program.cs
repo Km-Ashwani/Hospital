@@ -2,17 +2,20 @@
 using Hospital.BL.Interface.Application;
 using Hospital.BL.Interface.Application.Admin;
 using Hospital.BL.Interface.Application.Doctor;
+using Hospital.BL.Interface.Application.Email;
 using Hospital.BL.Interface.Application.Nurse;
 using Hospital.BL.Interface.Application.Patient;
 using Hospital.BL.Interface.Application.Receptionist;
 using Hospital.BL.Service.Application;
 using Hospital.BL.Service.Application.Admin;
 using Hospital.BL.Service.Application.Doctor;
+using Hospital.BL.Service.Application.Email;
 using Hospital.BL.Service.Application.Nurse;
 using Hospital.BL.Service.Application.Patient;
 using Hospital.BL.Service.Application.Receptionist;
 using Hospital.Db.AppLicationDbContext;
 using Hospital.Db.Models;
+using Hospital.Dto.Application;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,11 +34,16 @@ builder.Services.AddDbContext<AppDbContext>(option =>
     option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), x => x.MigrationsAssembly("Hospital.App"));
 });
 
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<INurseService, NurseService>();
 builder.Services.AddScoped<IReceptionistService, ReceptionistService>();
+
+builder.Services.AddScoped<IEmailService, EmailService>();
 //builder.Services.AddAuthentication();
 
 builder.Services.AddIdentity<AppUsers, IdentityRole>()
