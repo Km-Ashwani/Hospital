@@ -123,6 +123,19 @@ namespace Hospital.BL.Service.Application.Patient
         {
             try
             {
+                var user = _httpContextAccessor.HttpContext?.User;
+
+                if (user == null)
+                {
+                    throw new Exception("User context not available");
+                }
+
+                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    throw new Exception("DoctorId claim not found");
+                }
                 if (appointmentDetails == null)
                     throw new ArgumentNullException(nameof(appointmentDetails), "Parameter can't be null.");
 
@@ -131,7 +144,7 @@ namespace Hospital.BL.Service.Application.Patient
                 if (Doctor == null)
                     throw new Exception("Doctor not found.");
                 var Patient = await _context.PatientDetails.Include(x => x.AppUser)
-                    .FirstOrDefaultAsync(x => x.UserId == appointmentDetails.PatientId);
+                    .FirstOrDefaultAsync(x => x.UserId == userId);
                 if (Patient == null)
                     throw new Exception("Patient not found Please register first.");
 
@@ -268,38 +281,34 @@ namespace Hospital.BL.Service.Application.Patient
 
         public async Task<List<SearchDoctorByPatientDto>> SearchDoctorAsync(string name = null, string specialization = null)
         {
-            //var doctor = await _context.DoctorDetails.Include(x => x.AppUser)
-            //    .Where(x => (string.IsNullOrEmpty(name) || x.AppUser.firstName.Contains(name) || x.AppUser.lastName.Contains(name)) &&
-            //                (string.IsNullOrEmpty(specialization) || x.Specialization.Contains(specialization)))
-            //    .FirstOrDefaultAsync();
-
-            //if (doctor == null|| doctor.IsAvailable!=true)
-            //{
-            //    throw new Exception("Doctor not found with the given criteria.");
-            //}
-            //return _mapper.Map<SearchDoctorByPatientDto>(doctor);
-
-            var doctors = await _context.DoctorDetails
+            try
+            {
+                var doctors = await _context.DoctorDetails
                 .Include(x => x.AppUser)
                 .Where(x => x.IsAvailable == true)
                 .ToListAsync();
 
-            var matchedDoctors = doctors.Where(x =>
-                (string.IsNullOrEmpty(name) ||
-                    x.AppUser.firstName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
-                    x.AppUser.lastName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
-                    Fuzz.PartialRatio(x.AppUser.firstName.ToLower(), name.ToLower()) > 80 ||
-                    Fuzz.PartialRatio(x.AppUser.lastName.ToLower(), name.ToLower()) > 80)
-                     &&
-                    (string.IsNullOrEmpty(specialization) ||
-                    x.Specialization.Contains(specialization, StringComparison.OrdinalIgnoreCase) ||
-                    Fuzz.PartialRatio(x.Specialization.ToLower(), specialization.ToLower()) > 80)
-            ).ToList();
+                var matchedDoctors = doctors.Where(x =>
+                    (string.IsNullOrEmpty(name) ||
+                        x.AppUser.firstName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+                        x.AppUser.lastName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+                        Fuzz.PartialRatio(x.AppUser.firstName.ToLower(), name.ToLower()) > 80 ||
+                        Fuzz.PartialRatio(x.AppUser.lastName.ToLower(), name.ToLower()) > 80)
+                         &&
+                        (string.IsNullOrEmpty(specialization) ||
+                        x.Specialization.Contains(specialization, StringComparison.OrdinalIgnoreCase) ||
+                        Fuzz.PartialRatio(x.Specialization.ToLower(), specialization.ToLower()) > 80)
+                ).ToList();
 
-            if (!matchedDoctors.Any())
-                throw new Exception("No matching doctor found.");
+                if (!matchedDoctors.Any())
+                    throw new Exception("No matching doctor found.");
 
-            return _mapper.Map<List<SearchDoctorByPatientDto>>(matchedDoctors);
+                return _mapper.Map<List<SearchDoctorByPatientDto>>(matchedDoctors);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Doctor not found",ex.InnerException);
+            }
         }
 
         public async Task<GetPrescriptionDto> GetPrescriptionAsync(string appointmentId)

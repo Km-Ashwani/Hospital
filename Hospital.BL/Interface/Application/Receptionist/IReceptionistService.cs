@@ -10,8 +10,8 @@ namespace Hospital.BL.Interface.Application.Receptionist
 {
     public interface IReceptionistService
     {
-        Task<AddReceptionistDetailsDto> AddReceptionistDetailAsync(AddReceptionistDetailsDto addReceptionistDetailsDto, string email);
-        Task<PaymentDto> PaymentAsync(PaymentDto paymentDto, string patientUserId, string receptionistId);
+        Task<AddReceptionistDetailsDto> AddReceptionistDetailAsync(AddReceptionistDetailsDto addReceptionistDetailsDto);
+        Task<PaymentDto> PaymentAsync(PaymentDto paymentDto,string appointmentId);
 
     }
 }

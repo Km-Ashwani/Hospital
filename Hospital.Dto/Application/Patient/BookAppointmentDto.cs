@@ -9,7 +9,7 @@ namespace Hospital.Dto.Application.Patient
     public class BookAppointmentDto
     {
         public string DoctorId { get; set; }
-        public string PatientId { get; set; }
+        //public string PatientId { get; set; }
         public string Reason { get; set; }
         public string? AppointmentDate { get; set; }
     }

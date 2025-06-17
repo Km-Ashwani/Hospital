@@ -22,15 +22,15 @@ namespace Hospital.App.Controllers.Receptionist
 
         [Authorize(Roles = "Receptionist")]
         [HttpPost("AddReceptionistDetails")]
-        public async Task<IActionResult> AddReceptionistDetailsAsync([FromBody] AddReceptionistDetailsDto addReceptionistDetailsDto, string email)
+        public async Task<IActionResult> AddReceptionistDetailsAsync([FromBody] AddReceptionistDetailsDto addReceptionistDetailsDto)
         {
             try
             {
-                if (addReceptionistDetailsDto == null || string.IsNullOrEmpty(email))
+                if (addReceptionistDetailsDto == null)
                 {
                     return BadRequest("Invalid input data.");
                 }
-                var result = await _service.AddReceptionistDetailAsync(addReceptionistDetailsDto, email);
+                var result = await _service.AddReceptionistDetailAsync(addReceptionistDetailsDto);
                 if (result == null)
                 {
                     return NotFound("Failed to add receptionist details.");
@@ -46,7 +46,7 @@ namespace Hospital.App.Controllers.Receptionist
 
         [Authorize(Roles = "Receptionist")]
         [HttpPost("PaymentForAppointment")]
-        public async Task<IActionResult> PaymentForAppointmentAsync([FromBody] PaymentDto paymentDto, string patientUserID, string receptionistId)
+        public async Task<IActionResult> PaymentForAppointmentAsync([FromBody] PaymentDto paymentDto, string appointmentId)
         {
             try
             {
@@ -54,7 +54,7 @@ namespace Hospital.App.Controllers.Receptionist
                 {
                     return BadRequest("Payment details cannot be null.");
                 }
-                var result = await _service.PaymentAsync(paymentDto, patientUserID, receptionistId);
+                var result = await _service.PaymentAsync(paymentDto,appointmentId);
                 if (result == null)
                 {
                     return NotFound("Payment processing failed.");

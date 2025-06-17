@@ -12,8 +12,8 @@ namespace Hospital.Dto.Application.Patient
     public class GetAppointmentDetailsDto
     {
         public Guid AppointmentId { get; set; }
-        public string DoctorId { get; set; }
-        public string PatientId { get; set; }
+        public string DoctorName { get; set; }
+        public string PatientName { get; set; }
         public string? AppointmentDate { get; set; }
         public string Reason { get; set; }
         public Status? Status { get; set; }

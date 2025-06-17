@@ -12,7 +12,7 @@ namespace Hospital.BL.Interface.Application.Admin
         Task<List<DoctorDetailsDto>> GetAllDoctorDetailsAsync();
         Task<List<NurseDetailsDto>> GetAllNurseDetailsAsync();
         Task<List<PatientsDetailsDto>> GetAllPatientDetailsAsync();
-        Task<BookAppoinmentUpdateDto> UpdateAppointmentByAdminAsync(BookAppoinmentUpdateDto bookAppoinmentUpdateDto, string appointmentId);
+        Task<BookAppoinmentUpdateDto> UpdateAppointmentByAdminAsync(BookAppoinmentUpdateDto bookAppoinmentUpdateDto, string appointmentId, string doctorId);
 
     }
 }

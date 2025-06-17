@@ -62,7 +62,7 @@ namespace Hospital.BL.Service.Application.Admin
             return patientDetails;
         }
 
-        public async Task<BookAppoinmentUpdateDto> UpdateAppointmentByAdminAsync(BookAppoinmentUpdateDto bookAppoinmentUpdateDto, string appointmentId)
+        public async Task<BookAppoinmentUpdateDto> UpdateAppointmentByAdminAsync(BookAppoinmentUpdateDto bookAppoinmentUpdateDto, string appointmentId, string doctorId)
         {
             try
             {
@@ -78,7 +78,7 @@ namespace Hospital.BL.Service.Application.Admin
 
                 var doctor = await _context.DoctorDetails
                     .Include(d => d.AppUser)
-                    .FirstOrDefaultAsync(d => d.AppUser.Id == bookAppoinmentUpdateDto.DoctorId);
+                    .FirstOrDefaultAsync(d => d.AppUser.Id == doctorId);
                 if (doctor == null)
                 {
                     throw new Exception("Doctor not found");

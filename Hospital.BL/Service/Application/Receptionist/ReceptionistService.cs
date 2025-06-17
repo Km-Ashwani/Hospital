@@ -6,8 +6,10 @@ using Hospital.Db.Models.Appointment;
 using Hospital.Db.Models.Receptionist;
 using Hospital.Dto.Application.Patient;
 using Hospital.Dto.Application.Receptionist;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Hospital.BL.Service.Application.Receptionist
 {
@@ -16,34 +18,50 @@ namespace Hospital.BL.Service.Application.Receptionist
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly UserManager<AppUsers> _userManager;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ReceptionistService(AppDbContext context, IMapper mapper, UserManager<AppUsers> userManager)
+        public ReceptionistService(AppDbContext context, IMapper mapper, UserManager<AppUsers> userManager, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _mapper = mapper;
             _userManager = userManager;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<AddReceptionistDetailsDto> AddReceptionistDetailAsync(AddReceptionistDetailsDto addReceptionistDetailsDto ,string email)
+        public async Task<AddReceptionistDetailsDto> AddReceptionistDetailAsync(AddReceptionistDetailsDto addReceptionistDetailsDto)
         {
             try
             {
+
+                var user = _httpContextAccessor.HttpContext?.User;
+
+                if (user == null)
+                {
+                    throw new Exception("User context not available");
+                }
+
+                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    throw new Exception("DoctorId claim not found");
+                }
                 if (addReceptionistDetailsDto == null)
                     throw new ArgumentNullException(nameof(addReceptionistDetailsDto), "Parameter can't be null.");
 
-                var user = await _userManager.FindByEmailAsync(email);
-                if (user == null)
+                var receptionist = await _userManager.FindByIdAsync(userId);
+                if (receptionist == null)
                     throw new Exception("Receptionist user does not exist.");
 
                 // Update Identity user fields
-                user.firstName = addReceptionistDetailsDto.FirstName;
-                user.lastName = addReceptionistDetailsDto.LastName;
-                user.AdharNo = addReceptionistDetailsDto.AdharNo;
-                user.Address = addReceptionistDetailsDto.Address;
-                user.Gender = addReceptionistDetailsDto.Gender;
-                user.DateOfBirth = addReceptionistDetailsDto.DateOfBirth;
+                receptionist.firstName = addReceptionistDetailsDto.FirstName;
+                receptionist.lastName = addReceptionistDetailsDto.LastName;
+                receptionist.AdharNo = addReceptionistDetailsDto.AdharNo;
+                receptionist.Address = addReceptionistDetailsDto.Address;
+                receptionist.Gender = addReceptionistDetailsDto.Gender;
+                receptionist.DateOfBirth = addReceptionistDetailsDto.DateOfBirth;
 
-                var identityResult = await _userManager.UpdateAsync(user);
+                var identityResult = await _userManager.UpdateAsync(receptionist);
                 if (!identityResult.Succeeded)
                 {
                     var errorMessage = string.Join("; ", identityResult.Errors.Select(e => e.Description));
@@ -51,13 +69,13 @@ namespace Hospital.BL.Service.Application.Receptionist
                 }
 
                 // Role check
-                var roles = await _userManager.GetRolesAsync(user);
+                var roles = await _userManager.GetRolesAsync(receptionist);
                 if (roles == null || !roles.Contains("Receptionist"))
                     throw new Exception("User is not assigned the Receptionist role.");
 
                 // Map and save addReceptionistDetailsDto
                 var receptionistEntity = _mapper.Map<ReceptionistDetails>(addReceptionistDetailsDto);
-                receptionistEntity.UserId = user.Id; // Ensure UserId is set
+                receptionistEntity.UserId = userId; // Ensure UserId is set
                 await _context.receptionistDetails.AddAsync(receptionistEntity);
                 await _context.SaveChangesAsync();
 
@@ -69,12 +87,28 @@ namespace Hospital.BL.Service.Application.Receptionist
             }
         }
 
-        public async Task<PaymentDto> PaymentAsync(PaymentDto paymentDto, string patientUserId,string receptionistId)
+        public async Task<PaymentDto> PaymentAsync(PaymentDto paymentDto, string appointmentId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var appointment = await _context.Appointments.FindAsync(paymentDto.appointmentId);
+
+                var user = _httpContextAccessor.HttpContext?.User;
+
+                if (user == null)
+                {
+                    throw new Exception("User context not available");
+                }
+
+                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    throw new Exception("DoctorId claim not found");
+                }
+
+
+                var appointment = await _context.Appointments.FindAsync(appointmentId);
                
                 if (appointment == null)
                     throw new Exception("Appointment not found");
@@ -84,7 +118,7 @@ namespace Hospital.BL.Service.Application.Receptionist
 
                 if (paymentDto.Amount <= 0)
                     throw new Exception("Invalid payment amount.");
-                var receptionist = await _userManager.FindByIdAsync(receptionistId);
+                var receptionist = await _userManager.FindByIdAsync(userId);
                 if (receptionist == null)
                     throw new Exception("Receptionist not found.");
 
@@ -97,11 +131,12 @@ namespace Hospital.BL.Service.Application.Receptionist
 
                 appointment.ReceptionistId = receptionist.Id;
 
-                //_context.Appointments.Update(appointment);
+                var patientUserId = appointment.PatientId; // Assuming PatientId is the user ID of the patient
 
+                var id = Guid.Parse(appointmentId);
                 var payment = new AppointmentPayment
                 {
-                    AppointmentId = paymentDto.appointmentId,
+                    AppointmentId = id,
                     Amount = paymentDto.Amount,
                     PaymentMethod = paymentDto.paymentMethod,
                     Status = PaymentStatus.Success,

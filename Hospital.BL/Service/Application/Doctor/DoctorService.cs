@@ -182,6 +182,19 @@ namespace Hospital.BL.Service.Application.Doctor
         {
             try
             {
+                var user = _httpContextAccessor.HttpContext?.User;
+
+                if (user == null)
+                {
+                    throw new Exception("User context not available");
+                }
+
+                var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    throw new Exception("DoctorId claim not found");
+                }
                 var appointmentIds = Guid.Parse(appointmentId);
                 var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.AppointmentId == appointmentIds);
                 if (appointment == null)
@@ -192,35 +205,50 @@ namespace Hospital.BL.Service.Application.Doctor
                 {
                     throw new Exception("Wait for Admin response");
                 }
-                if (appointment.DoctorId != bookAppoinmentUpdateDto.DoctorId)
+                if (appointment.DoctorId != userId)
                 {
                     throw new Exception("You haven't book appointment for this doctor");
                 }
-                var patient = await _context.PatientDetails
-                   .Include(p => p.AppUser)
-                   .FirstOrDefaultAsync(p => p.UserId == bookAppoinmentUpdateDto.PatientId);
                 if (appointment.AppointmentDate != bookAppoinmentUpdateDto.AppointmentDate)
                 {
                     throw new Exception("You can't change appointment date, please contact admin for this issue.");
                 }
-
+                var patient = await _context.PatientDetails
+                   .Include(p => p.AppUser)
+                   .FirstOrDefaultAsync(p => p.UserId == bookAppoinmentUpdateDto.PatientId);
+                if (patient == null)
+                {
+                    throw new Exception("Patient not found.");
+                }
+                if (patient.AppUser == null)
+                {
+                    throw new Exception("Patient user not found.");
+                }
+                if (patient.AppUser.Email == null)
+                {
+                    throw new Exception("Patient email not found.");
+                }
                 var doctor = await _context.DoctorDetails
                     .Include(d => d.AppUser)
-                    .FirstOrDefaultAsync(d => d.UserId == bookAppoinmentUpdateDto.DoctorId);
+                    .FirstOrDefaultAsync(d => d.UserId == userId);
+                if (doctor == null)
+                {
+                    throw new Exception("doctor not found");
+                }
 
                 appointment.AppointmentId = appointmentIds;
                 appointment.AppointmentDate = bookAppoinmentUpdateDto.AppointmentDate;
                 appointment.Status = bookAppoinmentUpdateDto.Status;
 
-                string patientEmail = patient?.AppUser?.Email;
+                string patientEmail = patient.AppUser.Email;
                 string subject = "Appointment Update Notification";
-                string body = $@"<p>Dear <strong>{patient.AppUser.firstName} {patient.AppUser.lastName}</strong>,</p>
+                string body = $@"<p>Dear <strong>{patient.AppUser.firstName} {patient.AppUser.lastName}</strong></br>
+                                    with this Appointment Id {appointment.AppointmentId}</p>
                                  <p>We are pleased to inform you that your appointment request has been 
                                  <strong style='color:green;'>successfully confirmed</strong>.</p>
 
                                  <p><strong>Appointment Details:</strong></p>
                                  <ul>
-                                    <li><strong>Doctor ID:</strong> {appointment.DoctorId}</li>
                                     <li><strong>Doctor Name:</strong> Dr. {doctor.AppUser.firstName} {doctor.AppUser.lastName}</li>
                                     <li><strong>Appointment Date:</strong> {appointment.AppointmentDate:dd MMM yyyy}</li>
                                  </ul>
@@ -265,6 +293,7 @@ namespace Hospital.BL.Service.Application.Doctor
             {
                 if (doctorDetails == null)
                     throw new ArgumentNullException(nameof(doctorDetails), "Parameter can't be null.");
+
                 var user = _httpContextAccessor.HttpContext?.User;
 
                 if (user == null)

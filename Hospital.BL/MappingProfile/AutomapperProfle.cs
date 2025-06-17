@@ -127,7 +127,6 @@ namespace Hospital.BL.MappingProfile
 
 
             CreateMap<Appointments, BookAppointmentDto>()
-                .ForMember(dest => dest.PatientId, opt => opt.MapFrom(src => src.PatientId))
                 .ForMember(dest => dest.DoctorId, opt => opt.MapFrom(src => src.DoctorId))
                 .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.Reason))
                 .ForMember(dest => dest.AppointmentDate, opt => opt.MapFrom(src => src.AppointmentDate))
@@ -168,7 +167,6 @@ namespace Hospital.BL.MappingProfile
                 .ReverseMap();
 
             CreateMap<AppointmentPayment, PaymentDto>()
-                .ForMember(dest => dest.appointmentId, opt => opt.MapFrom(src => src.AppointmentId))
                 .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
                 .ForMember(dest => dest.PaymentDate, opt => opt.MapFrom(src => src.PaymentDate))
                 .ForMember(dest => dest.status, opt => opt.MapFrom(src => src.Status))

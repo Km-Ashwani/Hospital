@@ -56,7 +56,7 @@ namespace Hospital.App.Controllers.Admin
 
         [Authorize(Roles = "Admin")]
         [HttpPut("UpdateAppointmentByAdmin")]
-        public async Task<IActionResult> UpdateAppointmentByAdminAsync([FromBody] BookAppoinmentUpdateDto bookAppoinmentUpdateDto, string appointmentId)
+        public async Task<IActionResult> UpdateAppointmentByAdminAsync([FromBody] BookAppoinmentUpdateDto bookAppoinmentUpdateDto, string appointmentId, string doctorId)
         {
             try
             {
@@ -64,7 +64,7 @@ namespace Hospital.App.Controllers.Admin
                 {
                     return BadRequest("Invalid appointment update details or appointment ID.");
                 }
-                var result = await _service.UpdateAppointmentByAdminAsync(bookAppoinmentUpdateDto, appointmentId);
+                var result = await _service.UpdateAppointmentByAdminAsync(bookAppoinmentUpdateDto, appointmentId,doctorId);
                 return Ok(result);
             }
             catch (Exception ex)
