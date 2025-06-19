@@ -96,6 +96,7 @@ namespace Hospital.BL.Service.Application.Admin
                               $"A new appointment has been booked.<br/>" +
                               $"<Strong>Doctor Id {doctor.AppUser.Id}<Strong/> Name :{doctor.AppUser.firstName} {doctor.AppUser.lastName}<br/>" +
                               $"<Strong>Patient Id {patient.AppUser.Id}<Strong/> Name :{patient.AppUser.firstName} {patient.AppUser.lastName}<br/>" +
+                               $"<strong>Status :</strong> {appointment.AppointmentId}<br/><br/>" +
                               $"<strong>Status :</strong> {bookAppoinmentUpdateDto.Status}<br/><br/>" +
                               $"<strong>Date:</strong> {bookAppoinmentUpdateDto.AppointmentDate}<br/><br/>" +
                               $"Regards,<br/>Hospital Management System";

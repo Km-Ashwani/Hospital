@@ -1,6 +1,8 @@
 ﻿using Hospital.Db.Models;
 using Hospital.Db.Models.Appointment;
 using Hospital.Db.Models.Doctor;
+using Hospital.Db.Models.Labtechcian;
+using Hospital.Db.Models.LabTests;
 using Hospital.Db.Models.Nurse;
 using Hospital.Db.Models.Patients;
 using Hospital.Db.Models.Receptionist;
@@ -30,6 +32,8 @@ namespace Hospital.Db.AppLicationDbContext
         public DbSet<PrescriptionMedicine> PrescriptionMedicine { get; set; }
         public DbSet<LabTest> LabTests { get; set; }
         public DbSet<LabTestItem> labTestItems { get; set; }
+        public DbSet<LabPayment> LabPayments { get; set; }
+        public DbSet<Labtechnicians> Labtechnicians { get; set; }
         public DbSet<ReceptionistDetails> receptionistDetails { get; set; }
 
 
@@ -74,6 +78,11 @@ namespace Hospital.Db.AppLicationDbContext
                 .WithMany(r => r.ReceptionistAppointments)
                 .HasForeignKey(a => a.ReceptionistId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Appointments>()
+               .HasOne(a => a.Labtechnician)
+               .WithMany(r => r.LabTechnicianAppointments)
+               .HasForeignKey(a => a.LabTechnicianId)
+               .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

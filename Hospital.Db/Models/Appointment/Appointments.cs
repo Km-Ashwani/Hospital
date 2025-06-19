@@ -27,8 +27,13 @@ namespace Hospital.Db.Models.Appointment
         [ForeignKey("ReceptionistId")]
         public AppUsers Receptionist { get; set; }
 
+        public string? LabTechnicianId { get; set; }
+        [ForeignKey("LabTechnicianId")]
+        public AppUsers Labtechnician { get; set; }
+
         public string? AppointmentDate { get; set; } 
         public string Reason { get; set; }
+
         public Status? Status { get; set; }
         public string CreatedAt { get; set; } = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 

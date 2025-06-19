@@ -56,12 +56,6 @@ namespace Hospital.BL.Service.Auth
                     throw new Exception("User creation failed: " + errorMessages);
                 }
 
-                if (string.IsNullOrEmpty(registerDto.Role) || registerDto.Role == null)
-                {
-                    await AssignRoleAsync(registerDto.Email, "Patient");
-                    return "User created successfully with patient role ";
-                }
-
                 string userEmail = registerDto.Email;
                 string subject = "Registration Successful";
                 string body = $@"Dear {registerDto.Email},
@@ -74,6 +68,13 @@ namespace Hospital.BL.Service.Auth
 
                               Best regards,  
                               <strong>Hospital Team</strong>";
+
+                if (string.IsNullOrEmpty(registerDto.Role) || registerDto.Role == null)
+                {
+                    await AssignRoleAsync(registerDto.Email, "Patient");
+                    await _emailService.SendEmailAsync(userEmail, subject, body);
+                    return "User created successfully with patient role ";
+                }
 
                 await _emailService.SendEmailAsync(userEmail, subject, body);
 

@@ -1,4 +1,5 @@
-﻿using Hospital.Db.Models.Doctor;
+﻿using Hospital.Db.Models.Appointment;
+using Hospital.Db.Models.Doctor;
 using Hospital.Db.Models.Patients;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Hospital.Db.Models.Appointment
+namespace Hospital.Db.Models.LabTests
 {
     public class LabTest
     {

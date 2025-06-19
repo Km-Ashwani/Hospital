@@ -1,4 +1,5 @@
 ﻿using Hospital.Dto.Application;
+using Hospital.Dto.Application.Labtecnician;
 using Hospital.Dto.Application.Patient;
 using System;
 using System.Collections.Generic;
@@ -18,8 +19,10 @@ namespace Hospital.BL.Interface.Application.Patient
 
         Task<GetAppointmentDetailsDto> GetAppointmentsByUserAsync(string appointmentId);
 
-        Task<List<SearchDoctorByPatientDto>> SearchDoctorAsync(string name= null, string specialization = null);
+        Task<List<SearchDoctorByPatientDto>> SearchDoctorAsync(string? name = null, string? specialization = null);
 
         Task<GetPrescriptionDto> GetPrescriptionAsync(string appointmentId);
+
+        Task<LabTestDto> GetLabTestAsync(string appointmentId);
     }
 }

@@ -4,6 +4,7 @@ using Hospital.Db.AppLicationDbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hospital.Auth.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250617111644_addlabTechnicianTable")]
+    partial class addlabTechnicianTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -125,9 +128,6 @@ namespace Hospital.Auth.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("LabTechnicianId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("PatientId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -148,8 +148,6 @@ namespace Hospital.Auth.Migrations
                     b.HasKey("AppointmentId");
 
                     b.HasIndex("DoctorId");
-
-                    b.HasIndex("LabTechnicianId");
 
                     b.HasIndex("PatientId");
 
@@ -182,9 +180,6 @@ namespace Hospital.Auth.Migrations
 
                     b.Property<DateTime?>("FollowUpDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsLabTestRequired")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Symptoms")
                         .IsRequired()
@@ -674,11 +669,6 @@ namespace Hospital.Auth.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Hospital.Db.Models.AppUsers", "Labtechnician")
-                        .WithMany("LabTechnicianAppointments")
-                        .HasForeignKey("LabTechnicianId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Hospital.Db.Models.AppUsers", "Patient")
                         .WithMany("PatientAppointments")
                         .HasForeignKey("PatientId")
@@ -695,8 +685,6 @@ namespace Hospital.Auth.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Doctor");
-
-                    b.Navigation("Labtechnician");
 
                     b.Navigation("Patient");
 
@@ -908,8 +896,6 @@ namespace Hospital.Auth.Migrations
             modelBuilder.Entity("Hospital.Db.Models.AppUsers", b =>
                 {
                     b.Navigation("DoctorAppointments");
-
-                    b.Navigation("LabTechnicianAppointments");
 
                     b.Navigation("PatientAppointments");
 

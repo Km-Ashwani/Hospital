@@ -7,6 +7,7 @@ using Hospital.Db.Models;
 using Hospital.Db.Models.Appointment;
 using Hospital.Db.Models.Patients;
 using Hospital.Dto.Application;
+using Hospital.Dto.Application.Labtecnician;
 using Hospital.Dto.Application.Patient;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -157,6 +158,8 @@ namespace Hospital.BL.Service.Application.Patient
                 }
 
                 var adminRole = await _context.Roles.FirstOrDefaultAsync(x => x.Name == "Admin");
+                if (adminRole == null)
+                    throw new Exception("Admin role not found.");
                 var adminUserId = await _context.UserRoles
                                 .Where(ur => ur.RoleId == adminRole.Id)
                                 .Select(ur => ur.UserId)
@@ -173,20 +176,31 @@ namespace Hospital.BL.Service.Application.Patient
                 {
                     throw new Exception("Admin email not found.");
                 }
+
+                var appointmentEntity = _mapper.Map<Appointments>(appointmentDetails);
+
+                appointmentEntity.PatientId = userId;
+
+
+
+                await _context.Appointments.AddAsync(appointmentEntity);
+                await _context.SaveChangesAsync();
+
+                var appointmentId = _context.Appointments
+                    .Where(a => a.DoctorId == Doctor.AppUser.Id && a.PatientId == Patient.AppUser.Id && a.AppointmentDate == appointmentDetails.AppointmentDate)
+                    .Select(a => a.AppointmentId)
+                    .FirstOrDefault();
+
                 string adminEmail = adminUser.Email;
                 string subject = "New Appointment Notification";
-                string body = $"Dear {adminUser.firstName}-{adminUser.lastName},<br/><br/>" +
+                string body = $"Dear ,{adminUser.firstName}-{adminUser.lastName}<br/><br/>" +
                               $"A new appointment has been booked.<br/>" +
                               $"<Strong>Doctor Id- {Doctor.AppUser.Id}<Strong/> Name :{Doctor.AppUser.firstName} {Doctor.AppUser.lastName}<br/>" +
                               $"<Strong>Patient Id- {Patient.AppUser.Id}<Strong/> Name :{Patient.AppUser.firstName} {Patient.AppUser.lastName}<br/>" +
+                              $"<strong>Appointment Id:</strong> {appointmentId}<br/><br/>" +
                               $"<strong>Reason:</strong> {appointmentDetails.Reason}<br/><br/>" +
                               $"<strong>Date:</strong> {appointmentDetails.AppointmentDate}<br/><br/>" +
                               $"Regards,<br/>Hospital Management System";
-
-                
-                var appointmentEntity = _mapper.Map<Appointments>(appointmentDetails);
-                await _context.Appointments.AddAsync(appointmentEntity);
-                await _context.SaveChangesAsync();
 
                 await _emailService.SendEmailAsync(adminEmail, subject, body);
 
@@ -200,13 +214,20 @@ namespace Hospital.BL.Service.Application.Patient
         }
         public async Task<GetAppointmentDetailsDto> GetAppointmentsByUserAsync(string appointmentId)
         {
-            var id = Guid.Parse(appointmentId);
-            var appointments = await _context.Appointments.FirstOrDefaultAsync(x => x.AppointmentId == id);
-            if (appointments == null)
+            try
             {
-                throw new Exception("No appointments found for the patient.");
+                var id = Guid.Parse(appointmentId);
+                var appointments = await _context.Appointments.FirstOrDefaultAsync(x => x.AppointmentId == id);
+                if (appointments == null)
+                {
+                    throw new Exception("No appointments found for the patient.");
+                }
+                return _mapper.Map<GetAppointmentDetailsDto>(appointments);
             }
-            return _mapper.Map<GetAppointmentDetailsDto>(appointments);
+            catch (Exception ex)
+            {
+                throw new Exception("No appointment found", ex.InnerException);
+            }
         }
 
         public async Task<PatientsDetailsDto> UpdatePatientDetailsAsync(PatientsDetailsDto patientDetails)
@@ -279,7 +300,7 @@ namespace Hospital.BL.Service.Application.Patient
             }
         }
 
-        public async Task<List<SearchDoctorByPatientDto>> SearchDoctorAsync(string name = null, string specialization = null)
+        public async Task<List<SearchDoctorByPatientDto>> SearchDoctorAsync(string? name = null, string? specialization = null)
         {
             try
             {
@@ -290,10 +311,12 @@ namespace Hospital.BL.Service.Application.Patient
 
                 var matchedDoctors = doctors.Where(x =>
                     (string.IsNullOrEmpty(name) ||
-                        x.AppUser.firstName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
-                        x.AppUser.lastName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
-                        Fuzz.PartialRatio(x.AppUser.firstName.ToLower(), name.ToLower()) > 80 ||
-                        Fuzz.PartialRatio(x.AppUser.lastName.ToLower(), name.ToLower()) > 80)
+                         (!string.IsNullOrEmpty(x.AppUser?.firstName) &&
+                        (x.AppUser.firstName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+                        Fuzz.PartialRatio(x.AppUser.firstName.ToLower(), name.ToLower()) > 80)) ||
+                        (!string.IsNullOrEmpty(x.AppUser?.lastName) &&
+                        (x.AppUser.lastName.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+                        Fuzz.PartialRatio(x.AppUser.lastName.ToLower(), name.ToLower()) > 80)))
                          &&
                         (string.IsNullOrEmpty(specialization) ||
                         x.Specialization.Contains(specialization, StringComparison.OrdinalIgnoreCase) ||
@@ -307,7 +330,7 @@ namespace Hospital.BL.Service.Application.Patient
             }
             catch (Exception ex)
             {
-                throw new Exception("Doctor not found",ex.InnerException);
+                throw new Exception("Doctor not found", ex.InnerException);
             }
         }
 
@@ -336,5 +359,27 @@ namespace Hospital.BL.Service.Application.Patient
             }
         }
 
+        public async Task<LabTestDto> GetLabTestAsync(string appointmentId)
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Labtechnician)
+                .FirstOrDefaultAsync(a => a.AppointmentId == Guid.Parse(appointmentId));
+            if (appointment == null)
+            {
+                throw new Exception("Appointment not found.");
+            }
+            var prescription = await _context.Prescription
+                .Where(p => p.AppointmentId == Guid.Parse(appointmentId))
+                .FirstOrDefaultAsync();
+            if (prescription == null)
+            {
+                throw new Exception("Prescription not found for this appointment.");
+            }
+
+            var labTest = await _context.LabTests
+                .Where(l => l.AppointmentId == Guid.Parse(appointmentId))
+                .FirstOrDefaultAsync();
+            return _mapper.Map<LabTestDto>(labTest);
+        }
     }
 }

@@ -41,7 +41,6 @@ namespace Hospital.BL.Service.Application.Doctor
         {
             try
             {
-
                 var user = _httpContextAccessor.HttpContext?.User;
 
                 if (user == null)
@@ -216,18 +215,11 @@ namespace Hospital.BL.Service.Application.Doctor
                 var patient = await _context.PatientDetails
                    .Include(p => p.AppUser)
                    .FirstOrDefaultAsync(p => p.UserId == bookAppoinmentUpdateDto.PatientId);
-                if (patient == null)
+                if (patient == null ||patient.AppUser ==null ||patient.AppUser.Email==null)
                 {
                     throw new Exception("Patient not found.");
                 }
-                if (patient.AppUser == null)
-                {
-                    throw new Exception("Patient user not found.");
-                }
-                if (patient.AppUser.Email == null)
-                {
-                    throw new Exception("Patient email not found.");
-                }
+
                 var doctor = await _context.DoctorDetails
                     .Include(d => d.AppUser)
                     .FirstOrDefaultAsync(d => d.UserId == userId);
@@ -283,7 +275,7 @@ namespace Hospital.BL.Service.Application.Doctor
             }
             catch (Exception ex)
             {
-                throw new Exception("Something went wrong while saving doctor details.", ex.InnerException);
+                throw new Exception("Something went wrong while update appointment", ex.InnerException);
             }
         }
 
@@ -377,15 +369,35 @@ namespace Hospital.BL.Service.Application.Doctor
         {
             try
             {
-                var appointment = await _context.Prescription.FirstOrDefaultAsync(a => a.PrescriptionId == Guid.Parse(PrescriptionId));
-                if (appointment == null)
+                var prescription = await _context.Prescription.FirstOrDefaultAsync(a => a.PrescriptionId == Guid.Parse(PrescriptionId));
+                if (prescription == null)
                 {
                     throw new Exception("Prescription not found.");
+                }
+
+                if (prescription.Advice=="LabTest")
+                {
+                    var labTest = await _context.LabTests.FirstOrDefaultAsync(a => a.AppointmentId == prescription.AppointmentId);
+                    if (labTest == null)
+                    {
+                        throw new Exception("Lab test not found for this prescription.");
+                    }
+                    else
+                    {
+                        var medicines = _mapper.Map<List<PrescriptionMedicine>>(medicineDto);
+                        foreach (var medicine in medicines)
+                        {
+                            medicine.PrescriptionId = prescription.PrescriptionId;// Ensure PrescriptionId is set
+                        }
+                        await _context.PrescriptionMedicine.AddRangeAsync(medicines);
+                        await _context.SaveChangesAsync();
+                        return _mapper.Map<List<MedicineDto>>(medicines);
+                    }
                 }
                 var medicineEntity = _mapper.Map<List<PrescriptionMedicine>>(medicineDto);
                 foreach (var medicine in medicineEntity)
                 {
-                    medicine.PrescriptionId = appointment.PrescriptionId;// Ensure PrescriptionId is set
+                    medicine.PrescriptionId = prescription.PrescriptionId;// Ensure PrescriptionId is set
                 }
                 await _context.PrescriptionMedicine.AddRangeAsync(medicineEntity);
                 await _context.SaveChangesAsync();

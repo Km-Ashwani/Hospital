@@ -137,7 +137,7 @@ namespace Hospital.App.Controllers.Patient
 
         [Authorize(Roles = "Patient,Receptionist")]
         [HttpGet("SearchDoctor")]
-        public async Task<IActionResult> SearchDoctorAsync(string name = null, string specialization = null)
+        public async Task<IActionResult> SearchDoctorAsync(string? name = null, string? specialization = null)
         {
             try
             {
@@ -168,6 +168,29 @@ namespace Hospital.App.Controllers.Patient
                 if (result == null)
                 {
                     return NotFound("No prescription found for the provided appointment ID.");
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
+
+        [Authorize(Roles = "Patient")]
+        [HttpGet("GetLabTest")]
+        public async Task<IActionResult> GetLabTestAsync(string appointmentId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(appointmentId))
+                {
+                    return BadRequest("Appointment ID cannot be null or empty.");
+                }
+                var result = await _PatientService.GetLabTestAsync(appointmentId);
+                if (result == null)
+                {
+                    return NotFound("No lab test found for the provided appointment ID.");
                 }
                 return Ok(result);
             }

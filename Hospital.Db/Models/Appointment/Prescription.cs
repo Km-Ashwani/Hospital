@@ -20,6 +20,7 @@ namespace Hospital.Db.Models.Appointment
         public string Symptoms { get; set; }
         public string Advice { get; set; }
         public DateTime? FollowUpDate { get; set; }
+        public bool IsLabTestRequired { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public ICollection<PrescriptionMedicine> Medicines { get; set; }

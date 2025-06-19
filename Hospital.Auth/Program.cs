@@ -1,7 +1,10 @@
+using Hospital.BL.Interface.Application.Email;
 using Hospital.BL.Interface.Auth;
+using Hospital.BL.Service.Application.Email;
 using Hospital.BL.Service.Auth;
 using Hospital.Db.AppLicationDbContext;
 using Hospital.Db.Models;
+using Hospital.Dto.Application;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,8 +23,13 @@ builder.Services.AddDbContext<AppDbContext>(option =>
 {
     option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), x => x.MigrationsAssembly("Hospital.Auth"));
 });
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtGenerate, JwtGenerate>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddIdentity<AppUsers, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Hospital.Db.Models.Appointment
+namespace Hospital.Db.Models.LabTests
 {
     public class LabTestItem
     {

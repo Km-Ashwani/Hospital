@@ -4,6 +4,7 @@ using Hospital.Db.AppLicationDbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hospital.Auth.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250618075430_AppointmentTableModified")]
+    partial class AppointmentTableModified
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -128,6 +131,9 @@ namespace Hospital.Auth.Migrations
                     b.Property<string>("LabTechnicianId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("LabTest")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PatientId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -182,9 +188,6 @@ namespace Hospital.Auth.Migrations
 
                     b.Property<DateTime?>("FollowUpDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsLabTestRequired")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Symptoms")
                         .IsRequired()

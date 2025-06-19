@@ -20,5 +20,6 @@ namespace Hospital.Db.Models
         public ICollection<Appointments> PatientAppointments { get; set; }
         public ICollection<Appointments> DoctorAppointments { get; set; }
         public ICollection<Appointments> ReceptionistAppointments { get; set; }
+        public ICollection<Appointments> LabTechnicianAppointments { get; set; }
     }
 }

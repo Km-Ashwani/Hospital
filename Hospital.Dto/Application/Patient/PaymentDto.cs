@@ -10,7 +10,7 @@ namespace Hospital.Dto.Application.Patient
 {
     public class PaymentDto
     {
-        public string paymentMethod { get; set; }
+        public string? paymentMethod { get; set; }
         public decimal Amount { get; set; }
         public PaymentStatus status { get; set; }
         public DateTime PaymentDate { get; set; } = DateTime.Now;
