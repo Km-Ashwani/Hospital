@@ -4,6 +4,7 @@ using Hospital.Db.AppLicationDbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hospital.Auth.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250621053938_RemoveLabPaymetTable")]
+    partial class RemoveLabPaymetTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -302,42 +305,6 @@ namespace Hospital.Auth.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("DoctorDetails");
-                });
-
-            modelBuilder.Entity("Hospital.Db.Models.LabTests.LabPayment", b =>
-                {
-                    b.Property<Guid>("labPaymentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("AppointmentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("PatientUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TransactionId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("labPaymentId");
-
-                    b.HasIndex("AppointmentId");
-
-                    b.HasIndex("PatientUserId");
-
-                    b.ToTable("LabPayments");
                 });
 
             modelBuilder.Entity("Hospital.Db.Models.LabTests.LabTest", b =>
@@ -753,23 +720,6 @@ namespace Hospital.Auth.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
-                });
-
-            modelBuilder.Entity("Hospital.Db.Models.LabTests.LabPayment", b =>
-                {
-                    b.HasOne("Hospital.Db.Models.Appointment.Appointments", "Appointment")
-                        .WithMany()
-                        .HasForeignKey("AppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Hospital.Db.Models.AppUsers", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientUserId");
-
-                    b.Navigation("Appointment");
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("Hospital.Db.Models.LabTests.LabTest", b =>

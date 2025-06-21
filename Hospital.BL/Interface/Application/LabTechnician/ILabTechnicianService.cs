@@ -12,7 +12,7 @@ namespace Hospital.BL.Interface.Application.LabTechnician
     public interface ILabTechnicianService
     {
         Task<AddLabTechnicianDto> AddLabTechnicianDto(AddLabTechnicianDto labTechnicianDto);
-        Task<PaymentDto> PaymentAsync(PaymentDto paymentDto, string appointmentId);
+        Task<PaymentDto> PaymentAsync(PaymentDto paymentDto, Guid appointmentId);
         Task<LabTestDto> AddLabTestAsync(LabTestDto labTestDto, string appointmentId);
     }
 }

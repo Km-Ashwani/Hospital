@@ -12,12 +12,6 @@ namespace Hospital.Dto.Application.Labtecnician
 {
     public class LabTestDto
     {
-        public Guid AppointmentId { get; set; }
-       
-        public string PatientUserId { get; set; }
-
-        // Doctor who prescribed the test
-        public string DoctorUserId { get; set; }
 
         public DateTime RequestedDate { get; set; } = DateTime.Now;
 

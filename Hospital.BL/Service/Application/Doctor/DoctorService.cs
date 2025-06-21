@@ -202,6 +202,10 @@ namespace Hospital.BL.Service.Application.Doctor
                 }
                 if (appointment.Status == null || appointment.Status.ToString() != "Pending")
                 {
+                    if (appointment.Status.ToString() == "Confirm")
+                    {
+                        throw new Exception("appointment already confirm");
+                    }
                     throw new Exception("Wait for Admin response");
                 }
                 if (appointment.DoctorId != userId)
@@ -259,10 +263,6 @@ namespace Hospital.BL.Service.Application.Doctor
                                  <p>Thank you for choosing <strong>Hospital Management System</strong>. We are committed to providing you with the best possible care.</p>
                                  <p>We wish you good health and look forward to serving you!</p>";
 
-
-                _context.Appointments.Update(appointment);
-                await _context.SaveChangesAsync();
-
                 if (!string.IsNullOrEmpty(patientEmail))
                 {
                     await _emailService.SendEmailAsync(patientEmail, subject, body);
@@ -271,7 +271,12 @@ namespace Hospital.BL.Service.Application.Doctor
                 {
                     throw new Exception("Patient email not found.");
                 }
+
+                _context.Appointments.Update(appointment);
+                await _context.SaveChangesAsync();
+
                 return _mapper.Map<BookAppoinmentUpdateDto>(appointment);
+
             }
             catch (Exception ex)
             {
@@ -375,7 +380,13 @@ namespace Hospital.BL.Service.Application.Doctor
                     throw new Exception("Prescription not found.");
                 }
 
-                if (prescription.Advice=="LabTest")
+                var appointment = await _context.Appointments.FirstOrDefaultAsync(x => x.AppointmentId == prescription.AppointmentId);
+                if (appointment == null)
+                {
+                    throw new Exception("Appointment not found");
+                }
+
+                if (prescription.IsLabTestRequired==true)
                 {
                     var labTest = await _context.LabTests.FirstOrDefaultAsync(a => a.AppointmentId == prescription.AppointmentId);
                     if (labTest == null)
@@ -384,6 +395,7 @@ namespace Hospital.BL.Service.Application.Doctor
                     }
                     else
                     {
+
                         var medicines = _mapper.Map<List<PrescriptionMedicine>>(medicineDto);
                         foreach (var medicine in medicines)
                         {
@@ -391,9 +403,13 @@ namespace Hospital.BL.Service.Application.Doctor
                         }
                         await _context.PrescriptionMedicine.AddRangeAsync(medicines);
                         await _context.SaveChangesAsync();
+                        appointment.Status = Status.Completed;
                         return _mapper.Map<List<MedicineDto>>(medicines);
                     }
                 }
+
+                appointment.Status = Status.Completed;// Update appointment status to Confirm
+
                 var medicineEntity = _mapper.Map<List<PrescriptionMedicine>>(medicineDto);
                 foreach (var medicine in medicineEntity)
                 {
@@ -401,6 +417,7 @@ namespace Hospital.BL.Service.Application.Doctor
                 }
                 await _context.PrescriptionMedicine.AddRangeAsync(medicineEntity);
                 await _context.SaveChangesAsync();
+                appointment.Status = Status.Completed;// Update appointment status to Confirm
                 return _mapper.Map<List<MedicineDto>>(medicineEntity);
             }
             catch (Exception ex)

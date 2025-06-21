@@ -2,11 +2,14 @@
 using Hospital.Db.Models;
 using Hospital.Db.Models.Appointment;
 using Hospital.Db.Models.Doctor;
+using Hospital.Db.Models.Labtechcian;
+using Hospital.Db.Models.LabTests;
 using Hospital.Db.Models.Nurse;
 using Hospital.Db.Models.Patients;
 using Hospital.Db.Models.Receptionist;
 using Hospital.Dto.Application;
 using Hospital.Dto.Application.Doctor;
+using Hospital.Dto.Application.Labtecnician;
 using Hospital.Dto.Application.Nurse;
 using Hospital.Dto.Application.Patient;
 using Hospital.Dto.Application.Receptionist;
@@ -125,6 +128,17 @@ namespace Hospital.BL.MappingProfile
             CreateMap<AddReceptionistDetailsDto, ReceptionistDetails>()
                 .ForMember(dest => dest.AppUser, opt => opt.Ignore());
 
+            CreateMap<Labtechnicians, AddLabTechnicianDto>()
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.User.firstName))
+                 .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.User.lastName))
+                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.User.DateOfBirth))
+                 .ForMember(dest => dest.AdharNO, opt => opt.MapFrom(src => src.User.AdharNo))
+                 .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.User.Address))
+                 .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.User.Gender))
+                 .ForMember(dest => dest.Qualification, opt => opt.MapFrom(src => src.Qualification));
+            CreateMap<AddLabTechnicianDto, Labtechnicians>()
+                .ForMember(dest => dest.User, opt => opt.Ignore());
+
 
             CreateMap<Appointments, BookAppointmentDto>()
                 .ForMember(dest => dest.DoctorId, opt => opt.MapFrom(src => src.DoctorId))
@@ -171,6 +185,17 @@ namespace Hospital.BL.MappingProfile
                 .ForMember(dest => dest.PaymentDate, opt => opt.MapFrom(src => src.PaymentDate))
                 .ForMember(dest => dest.status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.paymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
+                .ReverseMap();
+
+            CreateMap<LabPayment, PaymentDto>().ReverseMap();
+
+            CreateMap<LabTest, LabTestDto>()
+                .ForMember(dest => dest.labTestItemDtos, opt => opt.MapFrom(src => src.LabTests))
+                .ForMember(dest => dest.Remarks, opt => opt.MapFrom(src => src.Remarks))
+                .ForMember(dest => dest.RequestedDate, opt => opt.MapFrom(src => src.RequestedDate))
+                .ReverseMap();
+
+            CreateMap<LabTestItem, LabTestItemDto>()
                 .ReverseMap();
         }
     }

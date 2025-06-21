@@ -62,7 +62,7 @@ namespace Hospital.Auth.Controllers
             try
             {
                 var result = await _service.AssignRoleAsync(userDto.Email, role);
-                if (result == null)
+                if (!result)
                 {
                     return BadRequest();
                 }

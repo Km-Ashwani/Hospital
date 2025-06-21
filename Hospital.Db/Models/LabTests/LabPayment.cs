@@ -1,6 +1,7 @@
 ﻿using Hospital.Db.Models.Appointment;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
@@ -10,15 +11,16 @@ namespace Hospital.Db.Models.LabTests
 {
     public class LabPayment
     {
+        [Key]
         public Guid labPaymentId { get; set; }
-
-        public Guid AppointmentId { get; set; }
-        [ForeignKey("AppointmentId")]
-        public LabTest? LabTest { get; set; }
 
         public string? PatientUserId { get; set; }
         [ForeignKey("PatientUserId")]
         public AppUsers? Patient { get; set; }
+
+        public Guid AppointmentId { get; set; }
+        [ForeignKey("AppointmentId")]
+        public Appointments Appointment { get; set; } 
 
         public decimal Amount { get; set; }            // e.g. 500.00
         public string? PaymentMethod { get; set; }      // e.g. "UPI", "CreditCard"

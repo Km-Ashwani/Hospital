@@ -17,7 +17,7 @@ namespace Hospital.App.Controllers.LabTechnician
         {
             _service = service;
         }
-        [Authorize("LabTechnician")]
+        [Authorize(Roles ="LabTechnician")]
         [HttpPost("AddLabTechnician")]
         public async Task<IActionResult> AddLabTechnician([FromBody] AddLabTechnicianDto labTechnicianDto)
         {
@@ -36,9 +36,9 @@ namespace Hospital.App.Controllers.LabTechnician
             }
         }
 
-        [Authorize("LabTechnician")]
+        [Authorize(Roles ="LabTechnician")]
         [HttpPost("LabPayment")]
-        public async Task<IActionResult> LabPayment([FromBody] PaymentDto labPaymentDto, string appointmentId)
+        public async Task<IActionResult> LabPayment([FromBody] PaymentDto labPaymentDto, Guid appointmentId)
         {
             if (labPaymentDto == null)
             {
@@ -55,7 +55,7 @@ namespace Hospital.App.Controllers.LabTechnician
             }
         }
 
-        [Authorize("LabTechnician")]
+        [Authorize(Roles ="LabTechnician")]
         [HttpPost("AddLabTest")]
         public async Task<IActionResult> AddLabTest([FromBody] LabTestDto labTestDto, string appointmentId)
         {

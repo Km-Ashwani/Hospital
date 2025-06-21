@@ -94,7 +94,7 @@ namespace Hospital.BL.Service.Application.Patient
             }
             catch (Exception ex)
             {
-                throw new Exception("Something went wrong while saving doctor details.", ex.InnerException);
+                throw new Exception("Something went wrong while saving doctor details.", ex);
             }
         }
 
@@ -359,27 +359,24 @@ namespace Hospital.BL.Service.Application.Patient
             }
         }
 
-        public async Task<LabTestDto> GetLabTestAsync(string appointmentId)
+        public async Task<List<LabTestItemDto>> GetLabTestAsync(string appointmentId)
         {
-            var appointment = await _context.Appointments
-                .Include(a => a.Labtechnician)
-                .FirstOrDefaultAsync(a => a.AppointmentId == Guid.Parse(appointmentId));
-            if (appointment == null)
-            {
-                throw new Exception("Appointment not found.");
-            }
-            var prescription = await _context.Prescription
-                .Where(p => p.AppointmentId == Guid.Parse(appointmentId))
-                .FirstOrDefaultAsync();
-            if (prescription == null)
-            {
-                throw new Exception("Prescription not found for this appointment.");
-            }
 
             var labTest = await _context.LabTests
-                .Where(l => l.AppointmentId == Guid.Parse(appointmentId))
-                .FirstOrDefaultAsync();
-            return _mapper.Map<LabTestDto>(labTest);
+                            .Include(l => l.LabTests) // VERY IMPORTANT
+                            .Where(l => l.AppointmentId == Guid.Parse(appointmentId))
+                            .FirstOrDefaultAsync(); // Expecting single appointment
+
+            var labPayment = await _context.LabPayments
+                .FirstOrDefaultAsync(a => a.AppointmentId == Guid.Parse(appointmentId));
+
+            if (labPayment == null || labPayment.Status != PaymentStatus.Success)
+            {
+                throw new Exception("Complete Your Payment");
+            }
+
+            // ✅ Yeh sahi hai:
+            return _mapper.Map<List<LabTestItemDto>>(labTest.LabTests.ToList());
         }
     }
 }

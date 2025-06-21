@@ -12,6 +12,7 @@ namespace Hospital.Dto.Application
         public string Diagnosis { get; set; }
         public string Symptoms { get; set; }
         public string Advice { get; set; }
+        public bool IsLabTestRequired { get; set; }
         public DateTime? FollowUpDate { get; set; }
     }
 }

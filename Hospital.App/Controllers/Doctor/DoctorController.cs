@@ -33,7 +33,7 @@ namespace Hospital.App.Controllers.Doctor
 
         [Authorize(Roles = "Doctor")]
         [HttpPut("UpdateAppointmentByDoctor")]
-        public async Task<IActionResult> UpdateAppointmentByDoctorAsync([FromBody] BookAppoinmentUpdateDto bookAppoinmentUpdateDto, string appointmentId, string doctorId)
+        public async Task<IActionResult> UpdateAppointmentByDoctorAsync([FromBody] BookAppoinmentUpdateDto bookAppoinmentUpdateDto, string appointmentId)
         {
             try
             {

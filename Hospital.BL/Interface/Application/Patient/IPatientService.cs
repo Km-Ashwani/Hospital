@@ -23,6 +23,6 @@ namespace Hospital.BL.Interface.Application.Patient
 
         Task<GetPrescriptionDto> GetPrescriptionAsync(string appointmentId);
 
-        Task<LabTestDto> GetLabTestAsync(string appointmentId);
+        Task<List<LabTestItemDto>> GetLabTestAsync(string appointmentId);
     }
 }

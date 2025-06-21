@@ -19,7 +19,7 @@ namespace Hospital.Db.AppLicationDbContext
 {
     public class AppDbContext : IdentityDbContext<AppUsers>
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) {  }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<AppUsers> AppUsers { get; set; }
         public DbSet<NurseDetails> NurseDetails { get; set; }
         public DbSet<DoctorDetails> DoctorDetails { get; set; }
@@ -83,6 +83,13 @@ namespace Hospital.Db.AppLicationDbContext
                .WithMany(r => r.LabTechnicianAppointments)
                .HasForeignKey(a => a.LabTechnicianId)
                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LabPayment>()
+                .HasOne(p => p.Appointment)
+                .WithMany()
+                .HasForeignKey(p => p.AppointmentId);
+
+
         }
     }
 }

@@ -108,7 +108,7 @@ namespace Hospital.BL.Service.Application.Receptionist
                 }
 
 
-                var appointment = await _context.Appointments.FindAsync(appointmentId);
+                var appointment = await _context.Appointments.FirstOrDefaultAsync(x=>x.AppointmentId ==Guid.Parse( appointmentId));
                
                 if (appointment == null)
                     throw new Exception("Appointment not found");
@@ -123,7 +123,7 @@ namespace Hospital.BL.Service.Application.Receptionist
                     throw new Exception("Receptionist not found.");
 
                 var existingPayment = await _context.AppointmentPayment
-                        .FirstOrDefaultAsync(p => p.Status == PaymentStatus.Success);
+                        .FirstOrDefaultAsync(p => p.AppointmentId == Guid.Parse( appointmentId));
 
                 if (existingPayment != null)
                     throw new Exception("Payment has already been completed for this appointment.");

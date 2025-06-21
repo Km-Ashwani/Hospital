@@ -4,6 +4,7 @@ using Hospital.Db.AppLicationDbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hospital.Auth.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250619100439_LabPaymentTableUpdate")]
+    partial class LabPaymentTableUpdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -316,6 +319,9 @@ namespace Hospital.Auth.Migrations
                     b.Property<Guid>("AppointmentId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("LabTestId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("PatientUserId")
                         .HasColumnType("nvarchar(450)");
 
@@ -334,6 +340,8 @@ namespace Hospital.Auth.Migrations
                     b.HasKey("labPaymentId");
 
                     b.HasIndex("AppointmentId");
+
+                    b.HasIndex("LabTestId");
 
                     b.HasIndex("PatientUserId");
 
@@ -763,11 +771,19 @@ namespace Hospital.Auth.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Hospital.Db.Models.LabTests.LabTest", "LabTest")
+                        .WithMany()
+                        .HasForeignKey("LabTestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Hospital.Db.Models.AppUsers", "Patient")
                         .WithMany()
                         .HasForeignKey("PatientUserId");
 
                     b.Navigation("Appointment");
+
+                    b.Navigation("LabTest");
 
                     b.Navigation("Patient");
                 });

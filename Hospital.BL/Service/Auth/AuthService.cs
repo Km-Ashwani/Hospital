@@ -131,7 +131,7 @@ namespace Hospital.BL.Service.Auth
         {
             try
             {
-                var user = await _context.AppUsers.FirstOrDefaultAsync(e => e.Email.ToLower() == email.ToLower());
+                var user = await _context.AppUsers.FirstOrDefaultAsync(e =>( e.Email??"").ToLower() == email.ToLower());
                 if (user == null)
                 {
                     throw new Exception("user not found");

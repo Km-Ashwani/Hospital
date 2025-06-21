@@ -52,20 +52,20 @@ namespace Hospital.BL.Service.Application.LabTechnician
 
                 if (string.IsNullOrEmpty(userId))
                 {
-                    throw new Exception("DoctorId claim not found");
+                    throw new Exception("labtechnicianId claim not found");
                 }
                 if (labTechnicianDto == null)
                     throw new ArgumentNullException(nameof(labTechnicianDto), "Parameter can't be null.");
 
                 var technician = await _userManager.FindByIdAsync(userId);
                 if (technician == null)
-                    throw new Exception("Doctor user does not exist.");
+                    throw new Exception("labtechnician user does not exist.");
 
                 var existingTechnician = await _context.Labtechnicians
                                           .FirstOrDefaultAsync(d => d.UserId == technician.Id);
                 if (existingTechnician != null)
                 {
-                    throw new Exception("Doctor details already exist for this user.");
+                    throw new Exception("LabTechnician details already exist for this user.");
                 }
 
                 technician.firstName = labTechnicianDto.FirstName;
@@ -98,11 +98,11 @@ namespace Hospital.BL.Service.Application.LabTechnician
             }
             catch (Exception ex)
             {
-                throw new Exception("Something went wrong while saving LabTechnician details.", ex);
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<PaymentDto> PaymentAsync(PaymentDto paymentDto, string appointmentId)
+        public async Task<PaymentDto> PaymentAsync(PaymentDto paymentDto, Guid appointmentId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -123,7 +123,7 @@ namespace Hospital.BL.Service.Application.LabTechnician
                 }
 
 
-                var appointment = await _context.Appointments.FindAsync(appointmentId);
+                var appointment = await _context.Appointments.FirstOrDefaultAsync(x =>x.AppointmentId ==appointmentId);
 
                 if (appointment == null)
                     throw new Exception("Appointment not found");
@@ -143,20 +143,19 @@ namespace Hospital.BL.Service.Application.LabTechnician
                 if (existingPayment != null)
                     throw new Exception("Payment has already been completed for this appointment.");
 
-
                 appointment.LabTechnicianId = labtechnician.Id;
 
                 var patientUserId = appointment.PatientId; // Assuming PatientId is the user ID of the patient
 
-                var id = Guid.Parse(appointmentId);
+
                 var payment = new LabPayment
                 {
-                    AppointmentId = id,
+                    AppointmentId = appointmentId,
                     Amount = paymentDto.Amount,
                     PaymentMethod = paymentDto.paymentMethod,
-                    Status = PaymentStatus.Success,
+                    Status = paymentDto.status,
                     TransactionId = Guid.NewGuid().ToString(),
-                    PatientUserId = patientUserId, // Assuming patientUserId is part of PaymentDto
+                    PatientUserId =patientUserId, // Assuming patientUserId is part of PaymentDto
                 };
 
 
@@ -188,10 +187,6 @@ namespace Hospital.BL.Service.Application.LabTechnician
             {
                 throw new Exception("Appointment not found.");
             }
-            if (appointment.Labtechnician == null)
-            {
-                throw new Exception("Lab Technician not assigned to this appointment.");
-            }
 
             var Prescription = _context.Prescription.Where(p => p.AppointmentId == Guid.Parse(appointmentId)).FirstOrDefault();
             if (Prescription == null) {
@@ -200,12 +195,6 @@ namespace Hospital.BL.Service.Application.LabTechnician
             var labTest = _mapper.Map<LabTest>(labTestDto);
             if (Prescription.IsLabTestRequired == true)
             {
-               
-                foreach (var item in labTestDto.labTestItemDtos)
-                {
-                    var labTestItem = _mapper.Map<LabTestItem>(item);
-                    labTest.LabTests.Add(labTestItem);
-                }
 
                 labTest.AppointmentId = Guid.Parse(appointmentId);
                 labTest.PatientUserId = appointment.PatientId;
