@@ -20,6 +20,7 @@ using Hospital.Db.Models;
 using Hospital.Dto.Application;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,6 +64,8 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 //    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
 //    options.AddPolicy("Patient", policy => policy.RequireRole("Patient"));
 //});
+
+QuestPDF.Settings.License = LicenseType.Community;// Register the QuestPDF services
 
 var app = builder.Build();
 

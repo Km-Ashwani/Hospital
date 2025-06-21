@@ -1,9 +1,13 @@
 ﻿using Hospital.BL.Interface.Application.Patient;
+using Hospital.BL.Service.Application;
+using Hospital.Db.AppLicationDbContext;
 using Hospital.Dto.Application;
 using Hospital.Dto.Application.Patient;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
 
 namespace Hospital.App.Controllers.Patient
 {
@@ -12,9 +16,12 @@ namespace Hospital.App.Controllers.Patient
     public class PatientController : ControllerBase
     {
         private readonly IPatientService _PatientService;
-        public PatientController(IPatientService PatientService)
+        private readonly AppDbContext _context;
+
+        public PatientController(IPatientService PatientService,AppDbContext context)
         {
             _PatientService = PatientService;
+            _context = context;
         }
 
         [Authorize(Roles ="Patient")]
@@ -199,5 +206,29 @@ namespace Hospital.App.Controllers.Patient
                 return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error: " + ex.Message);
             }
         }
+
+
+        [Authorize(Roles = "Patient")]  
+        [HttpGet("DownloadPrescription/{id}")]
+        public async Task<IActionResult> DownloadPrescription(Guid id)
+        {
+            var prescription = await _context.Prescription
+                                .Include(p => p.Appointment)
+                                .ThenInclude(a => a.Patient)
+                                .Include(p => p.Appointment)
+                                .ThenInclude(a => a.Doctor)
+                                .Include(p => p.Medicines)
+                                .FirstOrDefaultAsync(p => p.PrescriptionId == id);
+
+
+            if (prescription == null)
+                return NotFound("Prescription not found");
+
+            var document = new PrescriptionDocument(prescription);
+            var pdfBytes = document.GeneratePdf();
+
+            return File(pdfBytes, "application/pdf", "prescription.pdf");
+        }
+
     }
 }
