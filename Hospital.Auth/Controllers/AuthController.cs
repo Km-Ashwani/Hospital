@@ -1,8 +1,15 @@
-﻿using Hospital.BL.Interface.Auth;
+﻿using Hospital.BL.Interface.Application.Email;
+using Hospital.BL.Interface.Auth;
+using Hospital.Db.AppLicationDbContext;
+using Hospital.Db.Models;
 using Hospital.Dto.Application;
 using Hospital.Dto.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Web;
 
 namespace Hospital.Auth.Controllers
 {
@@ -11,10 +18,14 @@ namespace Hospital.Auth.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _service;
+        private readonly UserManager<AppUsers> _userManager;
+        private readonly IEmailService _emailService;
 
-        public AuthController(IAuthService service)
+        public AuthController(IAuthService service, UserManager<AppUsers> userManager,IEmailService emailService)
         {
             _service = service;
+            _userManager = userManager;
+            _emailService = emailService;
         }
 
         [HttpPost("Registration")]
@@ -74,6 +85,42 @@ namespace Hospital.Auth.Controllers
                 throw new Exception(ex.Message);
             }
         }
+
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return BadRequest("User not found.");
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetLink = $"https://dummy-frontend/reset-password?email={model.Email}&token={HttpUtility.UrlEncode(token)}";
+
+            await _emailService.SendEmailAsync(model.Email, "Reset Password",
+                $"Click here to reset your password: <a href='{resetLink}'>Reset Password</a>");
+
+            return Ok("Reset password link sent to your email and also here ."+token);
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return BadRequest("User not found.");
+
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description);
+                return BadRequest(string.Join(", ", errors));
+            }
+
+            return Ok("Password reset successfully.");
+        }
+
+        
 
     }
 }

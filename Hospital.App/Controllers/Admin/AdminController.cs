@@ -1,8 +1,12 @@
 ﻿using Hospital.BL.Interface.Application.Admin;
+using Hospital.Db.Models;
 using Hospital.Dto.Application;
+using Hospital.Dto.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Hospital.App.Controllers.Admin
 {
@@ -11,10 +15,12 @@ namespace Hospital.App.Controllers.Admin
     public class AdminController : ControllerBase
     {
         private readonly IAdminService _service;
+        private readonly UserManager<AppUsers> _userManager;
 
-        public AdminController(IAdminService service)
+        public AdminController(IAdminService service, UserManager<AppUsers> userManager)
         {
             _service = service;
+            _userManager = userManager;
         }
 
         [Authorize(Roles = "Admin")]
@@ -71,6 +77,28 @@ namespace Hospital.App.Controllers.Admin
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error: " + ex.Message);
             }
+        }
+
+        [Authorize]
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                return Unauthorized();
+
+            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description);
+                return BadRequest(string.Join(", ", errors));
+            }
+
+            return Ok("Password changed successfully.");
         }
     }
 }
