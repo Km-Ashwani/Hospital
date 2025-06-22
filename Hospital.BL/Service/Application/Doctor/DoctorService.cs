@@ -393,22 +393,7 @@ namespace Hospital.BL.Service.Application.Doctor
                     {
                         throw new Exception("Lab test not found for this prescription.");
                     }
-                    else
-                    {
-
-                        var medicines = _mapper.Map<List<PrescriptionMedicine>>(medicineDto);
-                        foreach (var medicine in medicines)
-                        {
-                            medicine.PrescriptionId = prescription.PrescriptionId;// Ensure PrescriptionId is set
-                        }
-                        await _context.PrescriptionMedicine.AddRangeAsync(medicines);
-                        await _context.SaveChangesAsync();
-                        appointment.Status = Status.Completed;
-                        return _mapper.Map<List<MedicineDto>>(medicines);
-                    }
                 }
-
-                appointment.Status = Status.Completed;// Update appointment status to Confirm
 
                 var medicineEntity = _mapper.Map<List<PrescriptionMedicine>>(medicineDto);
                 foreach (var medicine in medicineEntity)
