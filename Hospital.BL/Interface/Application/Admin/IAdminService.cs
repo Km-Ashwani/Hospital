@@ -1,4 +1,5 @@
 ﻿using Hospital.Dto.Application;
+using Hospital.Dto.Auth;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace Hospital.BL.Interface.Application.Admin
 {
     public interface IAdminService
     {
+        Task<string> RegisterHospitalMember(RegisterDto registerDto);
         Task<List<DoctorDetailsDto>> GetAllDoctorDetailsAsync();
         Task<List<NurseDetailsDto>> GetAllNurseDetailsAsync();
         Task<List<PatientsDetailsDto>> GetAllPatientDetailsAsync();

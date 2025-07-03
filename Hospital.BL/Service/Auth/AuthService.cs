@@ -34,31 +34,33 @@ namespace Hospital.BL.Service.Auth
         {
             try
             {
-                if (registerDto == null)
+                if (registerDto.Role == "Admin" || registerDto.Role== "")
                 {
-                    throw new ArgumentNullException(nameof(registerDto), "RegisterDto cannot be null");
-                }
-                var user = new AppUsers
-                {
-                    UserName = registerDto.Email,
-                    Email = registerDto.Email,
-                    PhoneNumber = registerDto.Phone,
-                };
-                var result = await _context.AppUsers.FirstOrDefaultAsync(e => e.Email.ToLower() == registerDto.Email.ToLower());
-                if (result != null)
-                {
-                    throw new Exception("user already Exits");
-                }
-                var createResult = await _userManager.CreateAsync(user, registerDto.Password);
-                if (!createResult.Succeeded)
-                {
-                    var errorMessages = string.Join(", ", createResult.Errors.Select(e => e.Description));
-                    throw new Exception("User creation failed: " + errorMessages);
-                }
+                    if (registerDto == null)
+                    {
+                        throw new ArgumentNullException(nameof(registerDto), "RegisterDto cannot be null");
+                    }
+                    var user = new AppUsers
+                    {
+                        UserName = registerDto.Email,
+                        Email = registerDto.Email,
+                        PhoneNumber = registerDto.Phone,
+                    };
+                    var result = await _context.AppUsers.FirstOrDefaultAsync(e => e.Email.ToLower() == registerDto.Email.ToLower());
+                    if (result != null)
+                    {
+                        throw new Exception("user already Exits");
+                    }
+                    var createResult = await _userManager.CreateAsync(user, registerDto.Password);
+                    if (!createResult.Succeeded)
+                    {
+                        var errorMessages = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                        throw new Exception("User creation failed: " + errorMessages);
+                    }
 
-                string userEmail = registerDto.Email;
-                string subject = "Registration Successful";
-                string body = $@"Dear {registerDto.Email},
+                    string userEmail = registerDto.Email;
+                    string subject = "Registration Successful";
+                    string body = $@"Dear {registerDto.Email},
                               We are delighted to inform you that your registration was successfully completed. 
                               You have been assigned the role of <strong>{registerDto.Password}</strong> in our system.
                               Thank you for choosing to register with <strong>Hospital Management System</strong>. 
@@ -69,14 +71,18 @@ namespace Hospital.BL.Service.Auth
                               Best regards,  
                               <strong>Hospital Team</strong>";
 
-                if (string.IsNullOrEmpty(registerDto.Role) || registerDto.Role == null)
-                {
-                    await AssignRoleAsync(registerDto.Email, "Patient");
+                    if (string.IsNullOrEmpty(registerDto.Role) || registerDto.Role == null)
+                    {
+                        await AssignRoleAsync(registerDto.Email, "Patient");
+                        await _emailService.SendEmailAsync(userEmail, subject, body);
+                        return "User created successfully with patient role ";
+                    }
                     await _emailService.SendEmailAsync(userEmail, subject, body);
-                    return "User created successfully with patient role ";
                 }
-
-                await _emailService.SendEmailAsync(userEmail, subject, body);
+                else
+                {
+                    throw new Exception("Role not allowed for registration");
+                }
 
                 await AssignRoleAsync(registerDto.Email, registerDto.Role);
                 return "User created successfully";
@@ -110,7 +116,7 @@ namespace Hospital.BL.Service.Auth
             };
 
             string userEmail = loginDto.Email;
-            string subject = "Registration Successful";
+            string subject = "Login Successful";
             string body = $@"
                         <p>Dear <strong>{loginDto.Email}</strong>,</p>
                         <p>We noticed a successful login to your account on <strong>Hospital Management System</strong>.</p>
@@ -153,46 +159,6 @@ namespace Hospital.BL.Service.Auth
                 throw new Exception();
             }
         }
-        //public async Task<string> RegisterPatientAsync(PatientRegisterDto patientRegisterDto)
-        //{
-        //    try
-        //    {
-        //        if (patientRegisterDto == null)
-        //            throw new ArgumentNullException(nameof(patientRegisterDto), "patientRegisterDto cannot be null");
-
-        //        var userExists = await _userManager.FindByEmailAsync(patientRegisterDto.Email);
-        //        if (userExists != null)
-        //            throw new Exception("User already exists");
-
-        //        var user = new AppUsers
-        //        {
-        //            UserName = patientRegisterDto.Email,
-        //            Email = patientRegisterDto.Email,
-        //            PhoneNumber = patientRegisterDto.Phone,
-        //        };
-
-        //        var result = await _userManager.CreateAsync(user, patientRegisterDto.Password);
-        //        if (!result.Succeeded)
-        //        {
-        //            var errorMessages = string.Join(", ", result.Errors.Select(e => e.Description));
-        //            throw new Exception("User creation failed: " + errorMessages);
-        //        }
-        //        var roleName = "Patient";
-        //        if (!await _roleManager.RoleExistsAsync(roleName))
-        //        {
-        //            await _roleManager.CreateAsync(new IdentityRole(roleName));
-        //        }
-
-        //        // ✅ Hardcoded Role assignment
-        //        await _userManager.AddToRoleAsync(user, roleName);
-
-        //        return "Patient registered successfully";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception("Something went wrong: " + ex.Message);
-        //    }
-        //}
 
     }
 }

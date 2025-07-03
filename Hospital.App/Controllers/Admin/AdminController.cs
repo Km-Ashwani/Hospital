@@ -24,6 +24,25 @@ namespace Hospital.App.Controllers.Admin
         }
 
         [Authorize(Roles = "Admin")]
+        [HttpPost("register-hospital-member")]
+        public async Task<IActionResult> RegisterHospitalMemberAsync([FromBody] RegisterDto registerDto)
+        {
+            if (registerDto == null)
+            {
+                return BadRequest("RegisterDto cannot be null.");
+            }
+            try
+            {
+                var result = await _service.RegisterHospitalMember(registerDto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Internal server error: " + ex.Message);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpGet("get-all-doctor-details")]
         public async Task<IActionResult> GetAllDoctorDetailsAsync()
         {
@@ -80,11 +99,12 @@ namespace Hospital.App.Controllers.Admin
         }
 
         [Authorize]
-
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized("User not authenticated.");
             var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null)
